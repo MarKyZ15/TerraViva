@@ -3,17 +3,42 @@
 
 /*
  * TerraViva — Simulador IoT
- * Todos os valores gerados são SIMULADOS.
- * Nenhum sensor físico é consultado ou conectado.
+ *
+ * IMPORTANTE:
+ * - Todos os dados são simulados.
+ * - Nenhum sensor físico é consultado ou conectado.
+ *
+ * Recursos:
+ * - Onda contínua com movimento fluido.
+ * - Leituras simuladas a cada 1 segundo.
+ * - Interpolação entre leituras.
+ * - Um único ciclo de animação.
+ * - Pausa e retomada com preservação do progresso.
+ * - Alertas, sons, histórico e cronômetro.
+ * - Chart.js atualizado sem animações concorrentes.
  */
 
 const CONFIG = {
-  defaultInterval: 10,
+  defaultInterval: 1,
+  readingInterval: 1000,
+  frameInterval: 1000 / 30,
   maxChartPoints: 24,
   defaultPeriod: 12,
+
   humidity: { min: 0, max: 100 },
   temperature: { min: 15, max: 35 },
-  chartAnimationDuration: 850
+
+  // Ondulação visual: amplitude em unidades de cada métrica.
+  wave: {
+    humidityAmplitude: 1.25,
+    humiditySecondaryAmplitude: 0.4,
+    temperatureAmplitude: 0.18,
+    temperatureSecondaryAmplitude: 0.07,
+    frequency: 0.48,
+    secondaryFrequency: 0.23,
+    speed: 2.0,
+    secondarySpeed: 1.25
+  }
 };
 
 const scenarios = {
@@ -25,6 +50,7 @@ const scenarios = {
     humidity: { min: 38, max: 60, step: 3 },
     temperature: { min: 21, max: 28, step: 0.7 }
   },
+
   seca: {
     title: "Estresse hídrico (seca)",
     icon: "☀️",
@@ -33,6 +59,7 @@ const scenarios = {
     humidity: { min: 8, max: 34, step: 4 },
     temperature: { min: 24, max: 33, step: 0.9 }
   },
+
   calor: {
     title: "Temperatura elevada (calor)",
     icon: "🔥",
@@ -56,6 +83,7 @@ const demoData = {
     min: 0,
     max: 100
   },
+
   temperature: {
     values: [
       21.8, 22.1, 22.5, 22.8, 23.2, 23.7,
@@ -99,11 +127,22 @@ let liveSamples = {
   temperature: []
 };
 
-// Controle independente da animação visual do gráfico.
+// Próxima leitura simulada e progresso da interpolação.
+let pendingReading = null;
+let animationStartedAt = 0;
+let animationDuration = CONFIG.readingInterval;
+let animationPausedProgress = 0;
+
+// Único ciclo de animação visual.
 let pulseFrameId = null;
 let pulseAnimationActive = false;
+let lastAnimationFrameAt = 0;
+let animationElapsedBeforePause = 0;
 
-// Evita repetir o mesmo alerta a cada leitura.
+// Tempo de referência para a onda.
+let waveStartedAt = 0;
+
+// Evita repetir alertas.
 let lastAlertKey = null;
 
 /* -------------------------------------------------------
@@ -150,13 +189,13 @@ function formatElapsed(milliseconds) {
   ].join(":");
 }
 
+/*
+ * A leitura é fixa em 1 segundo.
+ * O seletor visual de intervalo não pode criar um segundo
+ * ciclo ou alterar a frequência das leituras.
+ */
 function getIntervalMilliseconds() {
-  const selected = Number(getElement("intervalSelect")?.value);
-  const seconds = Number.isFinite(selected) && selected > 0
-    ? selected
-    : CONFIG.defaultInterval;
-
-  return seconds * 1000;
+  return CONFIG.readingInterval;
 }
 
 function getScenario() {
@@ -164,8 +203,17 @@ function getScenario() {
   return scenarios[selected] ? selected : "normal";
 }
 
+function getMetricBounds(metric) {
+  const config = demoData[metric] || demoData.humidity;
+
+  return {
+    min: config.min,
+    max: config.max
+  };
+}
+
 /* -------------------------------------------------------
-   NOTIFICAÇÕES TOAST
+   TOASTS
 ------------------------------------------------------- */
 
 function showToast(message, type = "success") {
@@ -181,6 +229,7 @@ function showToast(message, type = "success") {
   clearTimeout(toastTimeout);
 
   toastMessage.textContent = message;
+
   toast.classList.remove(
     "toast-warning",
     "toast-error",
@@ -212,7 +261,7 @@ function hideToast() {
 }
 
 /* -------------------------------------------------------
-   EFEITOS SONOROS
+   ÁUDIO
 ------------------------------------------------------- */
 
 function soundsEnabled() {
@@ -307,37 +356,39 @@ function playSound(type) {
 }
 
 /* -------------------------------------------------------
-   GERAÇÃO DE LEITURAS SIMULADAS
+   CÁLCULO DAS LEITURAS SIMULADAS
 ------------------------------------------------------- */
 
-function generateReading() {
-  const scenarioName = getScenario();
+function calculateReading(
+  baseHumidity = lastHumidity,
+  baseTemperature = lastTemperature,
+  scenarioName = getScenario()
+) {
   const scenario = scenarios[scenarioName];
 
   let humidity;
   let temperature;
 
   if (scenarioName === "normal") {
-    humidity = lastHumidity + randomBetween(
+    humidity = baseHumidity + randomBetween(
       -scenario.humidity.step,
       scenario.humidity.step
     );
 
-    temperature = lastTemperature + randomBetween(
+    temperature = baseTemperature + randomBetween(
       -scenario.temperature.step,
       scenario.temperature.step
     );
 
-    // Retorno gradual à faixa normal.
     humidity += (randomBetween(43, 53) - humidity) * 0.12;
     temperature += (randomBetween(22, 27) - temperature) * 0.12;
   } else if (scenarioName === "seca") {
-    humidity = lastHumidity - randomBetween(
+    humidity = baseHumidity - randomBetween(
       0.5,
       scenario.humidity.step
     );
 
-    temperature = lastTemperature + randomBetween(
+    temperature = baseTemperature + randomBetween(
       -0.2,
       scenario.temperature.step
     );
@@ -354,12 +405,12 @@ function generateReading() {
       scenario.temperature.max
     );
   } else {
-    temperature = lastTemperature + randomBetween(
+    temperature = baseTemperature + randomBetween(
       0.1,
       scenario.temperature.step
     );
 
-    humidity = lastHumidity + randomBetween(
+    humidity = baseHumidity + randomBetween(
       -scenario.humidity.step,
       0.4
     );
@@ -377,23 +428,33 @@ function generateReading() {
     );
   }
 
-  humidity = Number(clamp(humidity, 0, 100).toFixed(1));
-  temperature = Number(clamp(temperature, 15, 35).toFixed(1));
+  return {
+    humidity: Number(clamp(humidity, 0, 100).toFixed(1)),
+    temperature: Number(clamp(temperature, 15, 35).toFixed(1)),
+    timestamp: new Date(),
+    scenario: scenarioName
+  };
+}
 
-  lastHumidity = humidity;
-  lastTemperature = temperature;
+function commitReading(reading) {
+  lastHumidity = reading.humidity;
+  lastTemperature = reading.temperature;
 
-  const timestamp = new Date();
+  const timestamp = reading.timestamp instanceof Date
+    ? reading.timestamp
+    : new Date(reading.timestamp);
+
+  reading.timestamp = timestamp;
 
   liveSamples.humidity.push({
     label: formatTime(timestamp),
-    value: humidity,
+    value: reading.humidity,
     timestamp: timestamp.getTime()
   });
 
   liveSamples.temperature.push({
     label: formatTime(timestamp),
-    value: temperature,
+    value: reading.temperature,
     timestamp: timestamp.getTime()
   });
 
@@ -413,14 +474,13 @@ function generateReading() {
   updateLastUpdate(timestamp);
   updateEnvironmentalStatus();
 
-  // Efeito visual nos cartões de indicadores.
-  const metricCard = getElement("humidityValue")
+  const humidityCard = getElement("humidityValue")
     ?.closest(".metric-card");
 
-  const tempCard = getElement("temperatureValue")
+  const temperatureCard = getElement("temperatureValue")
     ?.closest(".metric-card");
 
-  [metricCard, tempCard].forEach((card) => {
+  [humidityCard, temperatureCard].forEach((card) => {
     if (!card) return;
 
     card.classList.remove("value-updated");
@@ -428,12 +488,22 @@ function generateReading() {
     card.classList.add("value-updated");
   });
 
-  return {
-    humidity,
-    temperature,
-    timestamp,
-    scenario: scenarioName
-  };
+  return reading;
+}
+
+function generateReading() {
+  const reading = commitReading(calculateReading());
+
+  if (simulatorState === "running") {
+    prepareNextReading();
+    startSimulationTimer();
+  } else {
+    pendingReading = null;
+    animationPausedProgress = 0;
+    updateChart();
+  }
+
+  return reading;
 }
 
 function updateScenarioDescription() {
@@ -452,7 +522,7 @@ function updateScenarioDescription() {
 }
 
 /* -------------------------------------------------------
-   INDICADORES DO DASHBOARD
+   INDICADORES
 ------------------------------------------------------- */
 
 function updateMetricCards() {
@@ -462,7 +532,8 @@ function updateMetricCards() {
   const temperatureProgress = getElement("temperatureProgress");
 
   if (humidityValue) {
-    humidityValue.textContent = lastHumidity.toFixed(1).replace(".0", "");
+    humidityValue.textContent =
+      lastHumidity.toFixed(1).replace(".0", "");
   }
 
   if (temperatureValue) {
@@ -475,10 +546,8 @@ function updateMetricCards() {
   }
 
   if (temperatureProgress) {
-    const percentage = ((lastTemperature - 15) / 20) * 100;
-
     temperatureProgress.style.width =
-      `${clamp(percentage, 0, 100)}%`;
+      `${clamp(((lastTemperature - 15) / 20) * 100, 0, 100)}%`;
   }
 
   const humidityStatus = getElement("humidityStatus");
@@ -517,8 +586,7 @@ function updateLastUpdate(date) {
   const lastUpdate = getElement("lastUpdate");
 
   if (lastUpdate) {
-    lastUpdate.textContent =
-      `Última leitura: ${formatTime(date)}`;
+    lastUpdate.textContent = `Última leitura: ${formatTime(date)}`;
   }
 }
 
@@ -533,24 +601,77 @@ function updateEnvironmentalStatus() {
     if (isDry) {
       message.textContent = "Alerta demonstrativo: umidade baixa";
     } else if (isHot) {
-      message.textContent = "Alerta demonstrativo: temperatura elevada";
+      message.textContent =
+        "Alerta demonstrativo: temperatura elevada";
     } else {
       message.textContent = "Leitura simulada processada";
     }
   }
 
-  const indicator = getElement("sensorStatusIndicator");
-
-  if (indicator) {
-    indicator.classList.toggle(
-      "indicator-warning",
-      isDry || isHot
-    );
-  }
+  getElement("sensorStatusIndicator")?.classList.toggle(
+    "indicator-warning",
+    isDry || isHot
+  );
 }
 
 /* -------------------------------------------------------
-   GRÁFICO — HISTÓRICO E DADOS RECENTES
+   INTERPOLAÇÃO
+------------------------------------------------------- */
+
+function smoothStep(progress) {
+  const p = clamp(progress, 0, 1);
+  return p * p * (3 - 2 * p);
+}
+
+function getAnimationProgress() {
+  if (!pendingReading || animationDuration <= 0) {
+    return 0;
+  }
+
+  if (simulatorState === "paused") {
+    return clamp(animationPausedProgress, 0, 1);
+  }
+
+  if (simulatorState !== "running") {
+    return 0;
+  }
+
+  return clamp(
+    (performance.now() - animationStartedAt) / animationDuration,
+    0,
+    1
+  );
+}
+
+function getInterpolatedReading() {
+  if (!pendingReading) return null;
+
+  const progress = smoothStep(getAnimationProgress());
+
+  return {
+    humidity: lastHumidity
+      + (pendingReading.humidity - lastHumidity) * progress,
+
+    temperature: lastTemperature
+      + (pendingReading.temperature - lastTemperature) * progress,
+
+    progress
+  };
+}
+
+function prepareNextReading() {
+  pendingReading = calculateReading();
+
+  // Cada destino visual dura exatamente um segundo.
+  animationDuration = CONFIG.readingInterval;
+  animationStartedAt = performance.now();
+  animationPausedProgress = 0;
+
+  updateChart();
+}
+
+/* -------------------------------------------------------
+   DADOS VISÍVEIS
 ------------------------------------------------------- */
 
 function makeHistoricalLabels(count) {
@@ -572,13 +693,37 @@ function getVisibleData(metric, period) {
   const config = demoData[metric];
   const live = liveSamples[metric];
 
+  const hasAnimatedPoint = Boolean(
+    pendingReading &&
+    (simulatorState === "running" || simulatorState === "paused")
+  );
+
   if (live.length > 0) {
-    const points = live.slice(-period);
+    const liveLimit = hasAnimatedPoint
+      ? Math.max(0, period - 1)
+      : period;
+
+    const points = liveLimit > 0
+      ? live.slice(-liveLimit)
+      : [];
+
+    const labels = points.map((point) => point.label);
+    const values = points.map((point) => point.value);
+
+    if (hasAnimatedPoint) {
+      const interpolated = getInterpolatedReading();
+
+      if (interpolated) {
+        labels.push("AGORA");
+        values.push(interpolated[metric]);
+      }
+    }
 
     return {
-      labels: points.map((point) => point.label),
-      values: points.map((point) => point.value),
-      isLive: true
+      labels,
+      values,
+      isLive: true,
+      isAnimating: hasAnimatedPoint
     };
   }
 
@@ -587,13 +732,14 @@ function getVisibleData(metric, period) {
   return {
     labels: makeHistoricalLabels(values.length),
     values,
-    isLive: false
+    isLive: false,
+    isAnimating: false
   };
 }
 
 function updateChartText() {
   const config = demoData[selectedMetric];
-  const live = liveSamples[selectedMetric].length > 0;
+  const hasLiveData = liveSamples[selectedMetric].length > 0;
 
   const title = getElement("chartTitle");
   const description = getElement("chartDescription");
@@ -601,53 +747,40 @@ function updateChartText() {
   const legendDot = getElement("chartLegendDot");
   const periodSummary = getElement("periodSummary");
 
-  if (title) {
-    title.textContent = config.title;
-  }
-
-  if (legend) {
-    legend.textContent = config.label;
-  }
+  if (title) title.textContent = config.title;
+  if (legend) legend.textContent = config.label;
 
   if (legendDot) {
     legendDot.style.backgroundColor = config.color;
   }
 
   if (description) {
-    description.textContent = live
-      ? "Leituras geradas pelo simulador nesta sessão. Não são provenientes de sensores físicos."
+    description.textContent = hasLiveData
+      ? "Leituras simuladas atualizadas a cada segundo. Não são provenientes de sensores físicos."
       : "Histórico inicial demonstrativo. Inicie a simulação para visualizar novas leituras.";
   }
 
   if (periodSummary) {
-    periodSummary.textContent =
-      `Últimas ${selectedPeriod} leituras`;
+    periodSummary.textContent = `Últimos ${selectedPeriod} pontos`;
   }
 }
 
-/*
- * Plugin visual:
- * desenha um ponto luminoso pulsante na extremidade
- * da curva enquanto a simulação está em execução.
- */
+/* -------------------------------------------------------
+   PLUGIN: PONTO LUMINOSO
+------------------------------------------------------- */
+
 const livePulsePlugin = {
   id: "terraVivaLivePulse",
 
   afterDatasetsDraw(chart) {
     if (simulatorState !== "running") return;
-    if (!chart.data.datasets.length) return;
 
     const meta = chart.getDatasetMeta(0);
 
-    if (!meta || !meta.data || meta.data.length === 0) {
-      return;
-    }
+    if (!meta?.data?.length) return;
 
     const point = meta.data[meta.data.length - 1];
-
-    if (!point || typeof point.getProps !== "function") {
-      return;
-    }
+    if (!point || typeof point.getProps !== "function") return;
 
     const position = point.getProps(["x", "y"], true);
 
@@ -659,34 +792,29 @@ const livePulsePlugin = {
     }
 
     const ctx = chart.ctx;
-    const now = performance.now();
-
-    // Pulso entre aproximadamente 4 e 8 pixels.
-    const pulse = (Math.sin(now / 230) + 1) / 2;
-    const radius = 4 + pulse * 3;
+    const pulse = (Math.sin(performance.now() / 230) + 1) / 2;
+    const radius = 4 + pulse * 2.5;
     const color = demoData[chartMetric]?.color || "#a7d96c";
 
     ctx.save();
 
-    // Halo externo.
     ctx.beginPath();
     ctx.arc(position.x, position.y, radius + 5, 0, Math.PI * 2);
     ctx.fillStyle = color;
-    ctx.globalAlpha = 0.10 + pulse * 0.12;
+    ctx.globalAlpha = 0.1 + pulse * 0.12;
     ctx.fill();
 
-    // Núcleo luminoso.
     ctx.globalAlpha = 1;
     ctx.shadowColor = color;
-    ctx.shadowBlur = 12 + pulse * 12;
+    ctx.shadowBlur = 10 + pulse * 10;
 
     ctx.beginPath();
     ctx.arc(position.x, position.y, radius * 0.65, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
 
-    // Centro branco para reforçar o efeito de sensor ativo.
     ctx.shadowBlur = 0;
+
     ctx.beginPath();
     ctx.arc(position.x, position.y, 1.8, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
@@ -697,10 +825,43 @@ const livePulsePlugin = {
 };
 
 /* -------------------------------------------------------
-   ANIMAÇÃO CONTÍNUA DO INDICADOR
+   ONDA CONTÍNUA
 ------------------------------------------------------- */
 
-function animateChartPulse() {
+/*
+ * Calcula pequenas oscilações visuais sobre os dados.
+ * A onda é apenas uma representação gráfica: não altera
+ * as leituras confirmadas nem o contador de leituras.
+ */
+function getWaveValue(baseValue, index, elapsed, metric) {
+  const settings = CONFIG.wave;
+
+  const primaryAmplitude = metric === "temperature"
+    ? settings.temperatureAmplitude
+    : settings.humidityAmplitude;
+
+  const secondaryAmplitude = metric === "temperature"
+    ? settings.temperatureSecondaryAmplitude
+    : settings.humiditySecondaryAmplitude;
+
+  const primary = Math.sin(
+    index * settings.frequency - elapsed * settings.speed
+  ) * primaryAmplitude;
+
+  const secondary = Math.sin(
+    index * settings.secondaryFrequency
+      - elapsed * settings.secondarySpeed
+  ) * secondaryAmplitude;
+
+  const bounds = getMetricBounds(metric);
+
+  return Number(
+    clamp(baseValue + primary + secondary, bounds.min, bounds.max)
+      .toFixed(2)
+  );
+}
+
+function animateChartPulse(timestamp) {
   if (
     !pulseAnimationActive ||
     simulatorState !== "running" ||
@@ -710,40 +871,76 @@ function animateChartPulse() {
     return;
   }
 
-  // Redesenha apenas o efeito visual, sem gerar leituras.
-  soilChart.draw();
-
+  // Mantém apenas um requestAnimationFrame ativo.
   pulseFrameId = requestAnimationFrame(animateChartPulse);
+
+  if (
+    timestamp - lastAnimationFrameAt <
+    CONFIG.frameInterval
+  ) {
+    return;
+  }
+
+  lastAnimationFrameAt = timestamp;
+
+  const visible = getVisibleData(selectedMetric, selectedPeriod);
+
+  if (!visible.values.length) return;
+
+  /*
+   * O tempo da onda usa performance.now(), que é monotônico.
+   * Isso evita saltos provocados por alterações no relógio.
+   */
+  const elapsed = Math.max(
+    0,
+    (performance.now() - waveStartedAt) / 1000
+  );
+
+  const waveValues = visible.values.map((value, index) =>
+    getWaveValue(value, index, elapsed, selectedMetric)
+  );
+
+  soilChart.data.labels = visible.labels;
+  soilChart.data.datasets[0].data = waveValues;
+
+  /*
+   * update("none") recalcula os pontos do Chart.js sem
+   * iniciar uma segunda animação interna concorrente.
+   * O gráfico contém poucos pontos, portanto o custo é baixo.
+   */
+  soilChart.update("none");
 }
 
 function startChartPulse() {
-  if (pulseAnimationActive) return;
+  if (pulseAnimationActive || !soilChart) return;
 
   pulseAnimationActive = true;
+  lastAnimationFrameAt = 0;
 
-  if (pulseFrameId !== null) {
-    cancelAnimationFrame(pulseFrameId);
+  if (!waveStartedAt) {
+    waveStartedAt = performance.now();
+  } else if (animationElapsedBeforePause > 0) {
+    waveStartedAt = performance.now() - animationElapsedBeforePause;
   }
 
   pulseFrameId = requestAnimationFrame(animateChartPulse);
 }
 
 function stopChartPulse() {
-  pulseAnimationActive = false;
-
   if (pulseFrameId !== null) {
     cancelAnimationFrame(pulseFrameId);
     pulseFrameId = null;
   }
 
-  // Remove o indicador pulsante imediatamente ao pausar.
+  pulseAnimationActive = false;
+
   if (soilChart) {
-    soilChart.draw();
+    updateChart();
   }
 }
 
 /* -------------------------------------------------------
-   CRIAÇÃO E ATUALIZAÇÃO DO GRÁFICO
+   CRIAÇÃO DO GRÁFICO
 ------------------------------------------------------- */
 
 function createSoilChart() {
@@ -762,15 +959,12 @@ function createSoilChart() {
     return;
   }
 
-  if (fallback) {
-    fallback.hidden = true;
-  }
+  if (fallback) fallback.hidden = true;
 
   const context = canvas.getContext("2d");
   const config = demoData[selectedMetric];
   const visible = getVisibleData(selectedMetric, selectedPeriod);
 
-  // Só destrói o gráfico quando realmente precisa recriá-lo.
   if (soilChart) {
     soilChart.destroy();
     soilChart = null;
@@ -799,18 +993,18 @@ function createSoilChart() {
 
         borderColor: config.color,
         backgroundColor: gradient,
-
         borderWidth: 2.5,
         fill: true,
-        tension: 0.38,
 
-        pointRadius: visible.values.length > 16 ? 2 : 3,
+        // Curva suavizada.
+        tension: 0.42,
+
+        pointRadius: visible.values.length > 16 ? 1.5 : 2.5,
         pointHoverRadius: 5,
         pointBackgroundColor: config.color,
         pointBorderColor: "#132016",
         pointBorderWidth: 1.5,
 
-        // Mantém o traçado com aspecto suave.
         borderCapStyle: "round",
         borderJoinStyle: "round"
       }]
@@ -822,10 +1016,8 @@ function createSoilChart() {
       responsive: true,
       maintainAspectRatio: false,
 
-      animation: {
-        duration: CONFIG.chartAnimationDuration,
-        easing: "easeInOutSine"
-      },
+      // A animação é controlada pelo nosso único ciclo RAF.
+      animation: false,
 
       interaction: {
         intersect: false,
@@ -853,7 +1045,14 @@ function createSoilChart() {
               return `${config.label}: ${value}${config.unit === "%" ? "%" : " °C"}`;
             },
 
-            afterBody() {
+            afterBody(context) {
+              if (context[0]?.label === "AGORA") {
+                return [
+                  "Onda visual em movimento",
+                  "Valor interpolado e simulado"
+                ];
+              }
+
               return ["Dado simulado"];
             }
           }
@@ -876,6 +1075,7 @@ function createSoilChart() {
             maxTicksLimit: 8,
             maxRotation: 0,
             autoSkip: true,
+
             font: {
               size: 10
             }
@@ -898,6 +1098,7 @@ function createSoilChart() {
           ticks: {
             color: "#8fa18b",
             padding: 9,
+
             font: {
               size: 10
             },
@@ -912,7 +1113,6 @@ function createSoilChart() {
   });
 
   chartMetric = selectedMetric;
-
   updateChartText();
 }
 
@@ -925,18 +1125,10 @@ function updateChart() {
     return;
   }
 
-  if (fallback) {
-    fallback.hidden = true;
-  }
+  if (fallback) fallback.hidden = true;
 
-  // Cria o gráfico se ainda não existir ou se a métrica mudou.
   if (!soilChart || chartMetric !== selectedMetric) {
     createSoilChart();
-
-    if (simulatorState === "running") {
-      startChartPulse();
-    }
-
     return;
   }
 
@@ -944,14 +1136,13 @@ function updateChart() {
   const visible = getVisibleData(selectedMetric, selectedPeriod);
   const dataset = soilChart.data.datasets[0];
 
-  // Atualiza os dados do gráfico existente.
-  // Não destrói nem recria o gráfico a cada leitura.
-  soilChart.data.labels = visible.labels;
-  dataset.data = visible.values;
   dataset.label = config.label;
   dataset.borderColor = config.color;
   dataset.pointBackgroundColor = config.color;
-  dataset.pointRadius = visible.values.length > 16 ? 2 : 3;
+  dataset.pointRadius = visible.values.length > 16 ? 1.5 : 2.5;
+
+  soilChart.data.labels = visible.labels;
+  dataset.data = visible.values;
 
   soilChart.options.scales.y.min = config.min;
   soilChart.options.scales.y.max = config.max;
@@ -959,9 +1150,7 @@ function updateChart() {
   soilChart.options.scales.y.ticks.callback = (value) =>
     `${value}${config.unit}`;
 
-  // Anima a transição entre as posições antigas e novas.
-  soilChart.update();
-
+  soilChart.update("none");
   updateChartText();
 }
 
@@ -991,15 +1180,13 @@ function updateSimulatorState(state) {
     stateElement.classList.add(`state-${state}`);
   }
 
-  const stateLabels = {
+  const labels = {
     running: "Em execução",
     paused: "Pausado",
     stopped: "Parado"
   };
 
-  if (stateText) {
-    stateText.textContent = stateLabels[state];
-  }
+  if (stateText) stateText.textContent = labels[state];
 
   if (metricStatus) {
     metricStatus.textContent =
@@ -1046,27 +1233,40 @@ function updateSimulatorState(state) {
   const intervalSummary = getElement("intervalSummary");
 
   if (intervalSummary) {
-    intervalSummary.textContent =
-      `${getIntervalMilliseconds() / 1000} s`;
-  }
-}
-
-function stopSimulationTimer() {
-  if (simulatorTimer !== null) {
-    clearInterval(simulatorTimer);
-    simulatorTimer = null;
+    intervalSummary.textContent = "1 s";
   }
 }
 
 /* -------------------------------------------------------
-   CICLO DE LEITURA E ALERTAS
+   TEMPORIZADOR DE LEITURAS
 ------------------------------------------------------- */
 
-function runSimulationCycle() {
-  const reading = generateReading();
+function stopSimulationTimer() {
+  if (simulatorTimer !== null) {
+    clearTimeout(simulatorTimer);
+    simulatorTimer = null;
+  }
+}
 
-  playSound("reading");
+function startSimulationTimer(delay = CONFIG.readingInterval) {
+  stopSimulationTimer();
 
+  if (simulatorState !== "running") return;
+
+  simulatorTimer = setTimeout(() => {
+    simulatorTimer = null;
+
+    if (simulatorState === "running") {
+      runSimulationCycle();
+    }
+  }, Math.max(0, delay));
+}
+
+/* -------------------------------------------------------
+   ALERTAS
+------------------------------------------------------- */
+
+function processReadingAlerts(reading) {
   let alertKey = null;
   let alertMessage = "";
 
@@ -1086,8 +1286,6 @@ function runSimulationCycle() {
       `Alerta simulado: temperatura em ${reading.temperature} °C.`;
   }
 
-  // Notifica apenas quando uma condição de alerta começa
-  // ou quando muda de um tipo de alerta para outro.
   if (alertKey && alertKey !== lastAlertKey) {
     showToast(alertMessage, "warning");
     playSound("warning");
@@ -1096,34 +1294,82 @@ function runSimulationCycle() {
   lastAlertKey = alertKey;
 }
 
+/* -------------------------------------------------------
+   CICLO DE LEITURA
+------------------------------------------------------- */
+
+function runSimulationCycle() {
+  if (simulatorState !== "running") return;
+
+  // O destino visual é confirmado como uma leitura.
+  const reading = pendingReading || calculateReading();
+
+  pendingReading = null;
+  animationPausedProgress = 0;
+
+  commitReading(reading);
+  processReadingAlerts(reading);
+  playSound("reading");
+
+  // Prepara a próxima onda e agenda uma leitura em 1 segundo.
+  prepareNextReading();
+  startSimulationTimer(CONFIG.readingInterval);
+}
+
+/* -------------------------------------------------------
+   INICIAR / RETOMAR
+------------------------------------------------------- */
+
 async function startSimulation() {
   if (simulatorState === "running") return;
 
   await initializeAudio();
 
-  // Retomada da sessão pausada.
   if (simulatorState === "paused") {
+    if (!pendingReading) {
+      prepareNextReading();
+    }
+
+    animationStartedAt =
+      performance.now() -
+      animationPausedProgress * animationDuration;
+
+    // Continua a contagem a partir do tempo acumulado.
     sessionStartTime = Date.now();
 
     updateSimulatorState("running");
     startElapsedTimer();
-    startSimulationTimer();
     startChartPulse();
+
+    const remaining = Math.max(
+      0,
+      animationDuration * (1 - animationPausedProgress)
+    );
+
+    startSimulationTimer(remaining);
 
     playSound("start");
     showToast("Simulação retomada.", "success");
-
     return;
   }
 
-  // Inicialização de uma nova sessão.
+  stopSimulationTimer();
+  stopElapsedTimer();
+  stopChartPulse();
+
   readingCount = 0;
+
   liveSamples = {
     humidity: [],
     temperature: []
   };
 
+  pendingReading = null;
+  animationPausedProgress = 0;
   elapsedBeforePause = 0;
+  animationElapsedBeforePause = 0;
+  waveStartedAt = performance.now();
+
   sessionStartTime = Date.now();
   lastAlertKey = null;
 
@@ -1131,33 +1377,40 @@ async function startSimulation() {
   updateElapsedDisplay();
   updateSimulatorState("running");
 
-  // Primeira leitura imediata.
-  runSimulationCycle();
+  // Registra uma leitura inicial imediatamente.
+  const initialReading = commitReading(calculateReading());
+
+  processReadingAlerts(initialReading);
+
+  // O próximo ponto se move continuamente durante 1 segundo.
+  prepareNextReading();
 
   startElapsedTimer();
-  startSimulationTimer();
   startChartPulse();
+  startSimulationTimer(CONFIG.readingInterval);
 
   playSound("start");
 
   showToast(
-    `Simulação iniciada: ${scenarios[getScenario()].title}.`,
+    `Simulação iniciada: ${scenarios[getScenario()].title}. Leituras a cada 1 segundo.`,
     "success"
   );
 }
 
-function startSimulationTimer() {
-  stopSimulationTimer();
-
-  simulatorTimer = setInterval(() => {
-    if (simulatorState === "running") {
-      runSimulationCycle();
-    }
-  }, getIntervalMilliseconds());
-}
+/* -------------------------------------------------------
+   PAUSAR
+------------------------------------------------------- */
 
 function pauseSimulation() {
   if (simulatorState !== "running") return;
+
+  animationPausedProgress = pendingReading
+    ? getAnimationProgress()
+    : 0;
+
+  animationElapsedBeforePause = waveStartedAt
+    ? performance.now() - waveStartedAt
+    : 0;
 
   stopSimulationTimer();
   stopElapsedTimer();
@@ -1169,14 +1422,19 @@ function pauseSimulation() {
   }
 
   updateSimulatorState("paused");
+  updateChart();
 
   playSound("pause");
 
   showToast(
-    "Simulação pausada. Os dados foram preservados.",
+    "Simulação pausada. Leituras e progresso visual preservados.",
     "warning"
   );
 }
+
+/* -------------------------------------------------------
+   PARAR
+------------------------------------------------------- */
 
 function stopSimulation() {
   if (simulatorState === "stopped") return;
@@ -1190,7 +1448,13 @@ function stopSimulation() {
     sessionStartTime = null;
   }
 
+  pendingReading = null;
+  animationPausedProgress = 0;
+  animationElapsedBeforePause = 0;
+  waveStartedAt = 0;
+
   updateSimulatorState("stopped");
+  updateChart();
 
   playSound("stop");
 
@@ -1207,7 +1471,7 @@ function stopSimulation() {
 }
 
 /* -------------------------------------------------------
-   CRONÔMETRO DA SESSÃO
+   CRONÔMETRO
 ------------------------------------------------------- */
 
 function startElapsedTimer() {
@@ -1325,7 +1589,8 @@ function setupChartControls() {
 
     updateChart();
 
-    if (simulatorState === "running") {
+    // A animação existente continua usando a métrica escolhida.
+    if (simulatorState === "running" && !pulseAnimationActive) {
       startChartPulse();
     }
   });
@@ -1334,8 +1599,8 @@ function setupChartControls() {
     button.addEventListener("click", () => {
       const requestedPeriod = Number(button.dataset.period);
 
-      selectedPeriod = Number.isFinite(requestedPeriod) &&
-        requestedPeriod > 0
+      selectedPeriod =
+        Number.isFinite(requestedPeriod) && requestedPeriod > 0
           ? requestedPeriod
           : CONFIG.defaultPeriod;
 
@@ -1372,9 +1637,16 @@ function setupSimulatorControls() {
 
   getElement("scenarioSelect")?.addEventListener("change", () => {
     updateScenarioDescription();
-
-    // Permite que um novo cenário gere seus próprios alertas.
     lastAlertKey = null;
+
+    if (simulatorState === "running") {
+      prepareNextReading();
+      startSimulationTimer(CONFIG.readingInterval);
+    } else if (simulatorState === "paused") {
+      prepareNextReading();
+      animationPausedProgress = 0;
+      updateChart();
+    }
 
     showToast(
       `Cenário selecionado: ${scenarios[getScenario()].title}.`,
@@ -1382,21 +1654,37 @@ function setupSimulatorControls() {
     );
   });
 
-  getElement("intervalSelect")?.addEventListener("change", () => {
+  /*
+   * O controle é mantido para preservar a interface,
+   * mas a simulação foi definida para atualizar a cada segundo.
+   */
+  const intervalSelect = getElement("intervalSelect");
+
+  intervalSelect?.addEventListener("change", () => {
+    const oneSecondOption = Array.from(intervalSelect.options)
+      .find((option) => Number(option.value) === 1);
+
+    if (oneSecondOption) {
+      intervalSelect.value = oneSecondOption.value;
+    }
+
     const intervalSummary = getElement("intervalSummary");
 
     if (intervalSummary) {
-      intervalSummary.textContent =
-        `${getIntervalMilliseconds() / 1000} s`;
+      intervalSummary.textContent = "1 s";
     }
 
-    // Aplica imediatamente o novo intervalo.
     if (simulatorState === "running") {
-      startSimulationTimer();
+      prepareNextReading();
+      startSimulationTimer(CONFIG.readingInterval);
+    } else if (simulatorState === "paused" && pendingReading) {
+      animationDuration = CONFIG.readingInterval;
+      animationPausedProgress = clamp(animationPausedProgress, 0, 1);
+      updateChart();
     }
 
     showToast(
-      `Intervalo configurado para ${getIntervalMilliseconds() / 1000} segundos.`,
+      "Atualização da simulação configurada para 1 segundo.",
       "success"
     );
   });
@@ -1438,6 +1726,23 @@ function initializeDashboard() {
   updateSimulatorState("stopped");
   updateEnvironmentalStatus();
 
+  const intervalSelect = getElement("intervalSelect");
+
+  if (intervalSelect) {
+    const oneSecondOption = Array.from(intervalSelect.options)
+      .find((option) => Number(option.value) === 1);
+
+    if (oneSecondOption) {
+      intervalSelect.value = oneSecondOption.value;
+    }
+  }
+
+  const intervalSummary = getElement("intervalSummary");
+
+  if (intervalSummary) {
+    intervalSummary.textContent = "1 s";
+  }
+
   createSoilChart();
 
   setupNavigation();
@@ -1451,7 +1756,7 @@ function initializeDashboard() {
   }
 
   console.info(
-    "TerraViva iniciado. Todos os dados são simulados; sensores físicos não estão conectados."
+    "TerraViva iniciado. Dados simulados; leituras a cada 1 segundo; sensores físicos não conectados."
   );
 }
 

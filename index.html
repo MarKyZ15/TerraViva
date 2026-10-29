@@ -1,159 +1,391 @@
+
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101914">
-  <meta name="description" content="TerraViva: painel acadêmico demonstrativo para visualização de indicadores ambientais do solo.">
-  <title>TerraViva | Monitoramento do Solo</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b120e">
+  <meta name="description" content="TerraViva — painel acadêmico de monitoramento agrícola com simulação IoT.">
+  <title>TerraViva | Monitoramento Inteligente</title>
+
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="js/dashboard.js" defer></script>
 </head>
+
 <body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#overview" aria-label="TerraViva, início">
-        <span class="brand-mark" aria-hidden="true">✳</span>
-        <span class="brand-name">Terra<span>Viva</span><small>SOLO • DADOS • FUTURO</small></span>
+      <a href="#inicio" class="brand">
+        <span class="brand-icon">🌱</span>
+        <span>
+          <strong>TerraViva</strong>
+          <small>Agricultura inteligente</small>
+        </span>
       </a>
 
-      <div class="workspace-label">ESPAÇO DE TRABALHO</div>
-      <nav class="main-nav" aria-label="Navegação principal">
-        <a class="nav-link active" href="#overview"><span class="nav-icon">⌂</span><span>Visão geral</span></a>
-        <a class="nav-link" href="#monitoramento"><span class="nav-icon">◉</span><span>Monitoramento</span></a>
-        <a class="nav-link" href="#historico"><span class="nav-icon">▥</span><span>Histórico</span></a>
-        <a class="nav-link" href="#sobre"><span class="nav-icon">ⓘ</span><span>Sobre o projeto</span></a>
+      <div class="sidebar-label">MENU PRINCIPAL</div>
+
+      <nav class="navigation" aria-label="Navegação principal">
+        <a href="#inicio" class="nav-link active">
+          <span>▦</span> Visão geral
+        </a>
+        <a href="#simulador" class="nav-link">
+          <span>⌁</span> Simulador IoT
+        </a>
+        <a href="#monitoramento" class="nav-link">
+          <span>◉</span> Monitoramento
+        </a>
+        <a href="#status" class="nav-link">
+          <span>▤</span> Estado do sistema
+        </a>
+        <a href="#sobre" class="nav-link">
+          <span>ⓘ</span> Sobre o projeto
+        </a>
       </nav>
 
       <div class="sidebar-spacer"></div>
-      <div class="sidebar-project-card">
-        <span class="tiny-status-dot"></span>
-        <div><strong>Ambiente de demonstração</strong><p>Os dados são ilustrativos.</p></div>
+
+      <div class="sidebar-system">
+        <span class="status-dot"></span>
+        <div>
+          <strong>Ambiente de demonstração</strong>
+          <small>Sem sensores físicos conectados</small>
+        </div>
       </div>
+
       <div class="sidebar-footer">
-        <span>TerraViva <span class="version">v1.2</span></span>
-        <span>Feito com cuidado, pensando em quem cultiva.</span>
+        TerraViva · Versão 2.0<br>
+        Projeto acadêmico
       </div>
     </aside>
 
-    <main class="main-content" id="overview">
+    <main class="main-content" id="inicio">
       <header class="topbar">
-        <button class="mobile-menu-button" id="mobileMenuButton" type="button" aria-label="Abrir menu" aria-expanded="false">☰</button>
-        <div class="breadcrumb"><span>TerraViva</span><span class="breadcrumb-separator">/</span><strong>Painel</strong></div>
-        <div class="topbar-actions">
-          <span class="demo-pill"><span class="tiny-status-dot"></span> MODO SIMULAÇÃO</span>
-          <div class="profile-avatar" role="img" aria-label="Ícone de usuário">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="12" cy="8" r="3.5"></circle>
-              <path d="M5.5 20c.3-3.7 2.8-5.8 6.5-5.8s6.2 2.1 6.5 5.8"></path>
-            </svg>
+        <div class="topbar-left">
+          <button
+            class="icon-button menu-toggle"
+            id="menuToggle"
+            aria-label="Abrir menu"
+            aria-expanded="false"
+          >☰</button>
+
+          <div>
+            <div class="eyebrow">PAINEL DE CONTROLE</div>
+            <h1>Visão geral</h1>
           </div>
+        </div>
+
+        <div class="topbar-right">
+          <span class="demo-badge">
+            <span class="status-dot"></span>
+            MODO SIMULAÇÃO
+          </span>
+
+          <button class="avatar" aria-label="Perfil de demonstração" title="Perfil de demonstração">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 21c0-4.2 3.2-7 8-7s8 2.8 8 7"></path>
+            </svg>
+          </button>
         </div>
       </header>
 
-      <section class="page-heading">
+      <section class="welcome-banner">
+        <div class="banner-content">
+          <span class="banner-kicker">TECNOLOGIA A FAVOR DA NATUREZA</span>
+          <h2>Monitoramento inteligente,<br>cultivo mais consciente.</h2>
+          <p>
+            Acompanhe indicadores ambientais e teste cenários agrícolas
+            em um ambiente de simulação interativo.
+          </p>
+          <a href="#simulador" class="primary-link">Explorar simulador <span>→</span></a>
+        </div>
+
+        <div class="banner-visual" aria-hidden="true">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="sun-glow"></div>
+          <div class="plant plant-back">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="plant plant-front">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="ground-line"></div>
+          <div class="floating-leaf leaf-one">✦</div>
+          <div class="floating-leaf leaf-two">✧</div>
+        </div>
+      </section>
+
+      <div class="section-heading">
         <div>
-          <p class="eyebrow">PAINEL AMBIENTAL</p>
-          <h1>Monitoramento do solo</h1>
-          <p class="page-subtitle">Uma visão simples para acompanhar indicadores e apoiar decisões mais conscientes.</p>
+          <div class="eyebrow">RESUMO AMBIENTAL</div>
+          <h2>Indicadores em tempo real</h2>
+          <p class="section-description">
+            Valores gerados localmente pelo simulador, não por sensores físicos.
+          </p>
         </div>
-        <button class="button button-secondary" id="refreshButton" type="button"><span aria-hidden="true">↻</span> Atualizar demonstração</button>
+
+        <button class="secondary-button" id="refreshButton">
+          <span class="refresh-icon">↻</span>
+          Gerar leitura
+        </button>
+      </div>
+
+      <section class="metrics-grid" aria-label="Indicadores ambientais">
+        <article class="metric-card humidity-card">
+          <div class="metric-top">
+            <span class="metric-icon">💧</span>
+            <span class="metric-tag">SIMULADO</span>
+          </div>
+          <div class="metric-label">Umidade do solo</div>
+          <div class="metric-value">
+            <span id="humidityValue">42</span><small>%</small>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill humidity-fill" id="humidityProgress" style="width:42%"></div>
+          </div>
+          <div class="metric-bottom">
+            <span id="humidityStatus">Condição adequada</span>
+            <span>0–100%</span>
+          </div>
+        </article>
+
+        <article class="metric-card temperature-card">
+          <div class="metric-top">
+            <span class="metric-icon">🌡️</span>
+            <span class="metric-tag">SIMULADO</span>
+          </div>
+          <div class="metric-label">Temperatura ambiente</div>
+          <div class="metric-value">
+            <span id="temperatureValue">24.5</span><small>°C</small>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill temperature-fill" id="temperatureProgress" style="width:47%"></div>
+          </div>
+          <div class="metric-bottom">
+            <span id="temperatureStatus">Faixa moderada</span>
+            <span>15–35 °C</span>
+          </div>
+        </article>
+
+        <article class="metric-card system-card">
+          <div class="metric-top">
+            <span class="metric-icon">⌁</span>
+            <span class="metric-tag">LOCAL</span>
+          </div>
+          <div class="metric-label">Estado do simulador</div>
+          <div class="metric-value text-value" id="simulatorMetricStatus">Parado</div>
+          <div class="metric-subvalue" id="lastUpdate">Nenhuma leitura recente</div>
+          <div class="metric-bottom">
+            <span>Intervalo configurado</span>
+            <strong id="intervalSummary">10 s</strong>
+          </div>
+        </article>
+
+        <article class="metric-card readings-card">
+          <div class="metric-top">
+            <span class="metric-icon">▤</span>
+            <span class="metric-tag">SESSÃO</span>
+          </div>
+          <div class="metric-label">Leituras geradas</div>
+          <div class="metric-value" id="readingCount">0</div>
+          <div class="metric-subvalue">Nesta sessão de simulação</div>
+          <div class="metric-bottom">
+            <span>Tempo de execução</span>
+            <strong id="elapsedTime">00:00</strong>
+          </div>
+        </article>
       </section>
 
-      <section class="welcome-banner" aria-labelledby="welcomeTitle">
-        <div class="welcome-copy">
-          <span class="banner-label"><span class="banner-label-dot"></span> TECNOLOGIA E SUSTENTABILIDADE</span>
-          <h2 id="welcomeTitle">Conhecer a terra.<br><em>Cuidar do futuro.</em></h2>
-          <p>Indicadores apresentados de forma clara para facilitar a leitura do ambiente e aproximar a tecnologia da rotina de pequenos produtores.</p>
-          <a class="banner-link" href="#monitoramento">Explorar indicadores <span aria-hidden="true">→</span></a>
+      <section class="simulator-panel" id="simulador">
+        <div class="panel-heading">
+          <div>
+            <div class="eyebrow">CENTRAL DE TESTES</div>
+            <h2>Simulador de dados IoT</h2>
+            <p class="section-description">
+              Gere leituras artificiais para testar o painel sem equipamentos físicos.
+            </p>
+          </div>
+
+          <span class="simulator-state state-stopped" id="simulatorState">
+            <span class="state-dot"></span>
+            <span id="simulatorStateText">Parado</span>
+          </span>
         </div>
-        <div class="plant-art" aria-hidden="true">
-          <div class="sun-orb"></div><div class="plant-stem"></div>
-          <div class="leaf leaf-one"></div><div class="leaf leaf-two"></div><div class="leaf leaf-three"></div>
-          <div class="soil-hill hill-back"></div><div class="soil-hill hill-front"></div>
-          <div class="art-spark spark-one">✦</div><div class="art-spark spark-two">·</div>
+
+        <div class="simulation-notice">
+          <span class="notice-icon">ⓘ</span>
+          <p>
+            <strong>Ambiente simulado:</strong> os valores são calculados pelo navegador.
+            Não representam dados reais de uma plantação ou de sensores conectados.
+          </p>
         </div>
-        <div class="banner-decoration" aria-hidden="true">TV</div>
+
+        <div class="simulator-controls">
+          <div class="control-field">
+            <label for="scenarioSelect">Cenário de operação</label>
+            <select id="scenarioSelect">
+              <option value="normal" selected>Operação normal</option>
+              <option value="seca">Estresse hídrico (seca)</option>
+              <option value="calor">Temperatura elevada (calor)</option>
+            </select>
+          </div>
+
+          <div class="control-field">
+            <label for="intervalSelect">Intervalo de leitura</label>
+            <select id="intervalSelect">
+              <option value="5">5 segundos</option>
+              <option value="10" selected>10 segundos</option>
+              <option value="15">15 segundos</option>
+              <option value="30">30 segundos</option>
+              <option value="60">60 segundos</option>
+            </select>
+          </div>
+
+          <div class="control-field sound-field">
+            <label for="soundToggle">Efeitos sonoros</label>
+            <label class="switch-control">
+              <input type="checkbox" id="soundToggle" checked>
+              <span class="switch-slider"></span>
+              <span id="soundLabel">Ativados</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="scenario-description" id="scenarioDescription">
+          <span class="scenario-icon">🌿</span>
+          <div>
+            <strong>Operação normal</strong>
+            <p>Oscilações moderadas de umidade e temperatura para representar condições estáveis.</p>
+          </div>
+        </div>
+
+        <div class="simulator-actions">
+          <button class="action-button action-start" id="startButton">
+            <span>▶</span> Iniciar
+          </button>
+          <button class="action-button action-pause" id="pauseButton" disabled>
+            <span>Ⅱ</span> Pausar
+          </button>
+          <button class="action-button action-stop" id="stopButton" disabled>
+            <span>■</span> Parar
+          </button>
+        </div>
+
+        <div class="simulator-footer">
+          <span><span class="mini-dot green-dot"></span> Execução contínua até parada manual</span>
+          <span id="sessionMessage">Pronto para iniciar</span>
+        </div>
       </section>
 
-      <section class="section-block" id="monitoramento">
-        <div class="section-heading">
-          <div><p class="eyebrow">LEITURA RÁPIDA</p><h2>Indicadores ambientais</h2></div>
-          <span class="section-note"><span class="tiny-status-dot"></span> Valores simulados para demonstração</span>
-        </div>
+      <section class="chart-panel" id="monitoramento">
+        <div class="panel-heading chart-heading">
+          <div>
+            <div class="eyebrow">HISTÓRICO DE LEITURAS</div>
+            <h2 id="chartTitle">Umidade do solo</h2>
+            <p class="section-description" id="chartDescription">
+              Histórico demonstrativo. Inicie o simulador para visualizar novas leituras.
+            </p>
+          </div>
 
-        <div class="metrics-grid">
-          <article class="metric-card">
-            <div class="metric-top"><span class="metric-icon humidity-icon">≈</span><span class="metric-label">Umidade do solo</span><span class="metric-info" title="Valor ilustrativo, não medido por sensor físico." aria-label="Valor ilustrativo">i</span></div>
-            <div class="metric-value"><span id="humidityValue">42</span><small>%</small></div>
-            <div class="metric-foot"><span class="metric-context">Indicador demonstrativo</span><span class="metric-sparkline" aria-hidden="true">▁▃▂▅▄▆▅</span></div>
-            <div class="metric-progress"><span id="humidityProgress" style="width:42%"></span></div>
-          </article>
-          <article class="metric-card">
-            <div class="metric-top"><span class="metric-icon temperature-icon">°</span><span class="metric-label">Temperatura</span><span class="metric-info" title="Valor ilustrativo, não medido por sensor físico." aria-label="Valor ilustrativo">i</span></div>
-            <div class="metric-value"><span id="temperatureValue">24,5</span><small>°C</small></div>
-            <div class="metric-foot"><span class="metric-context">Indicador demonstrativo</span><span class="metric-sparkline warm" aria-hidden="true">▂▃▄▃▅▄▆</span></div>
-            <div class="metric-progress temperature-progress"><span id="temperatureProgress" style="width:49%"></span></div>
-          </article>
-          <article class="metric-card sensor-card">
-            <div class="metric-top"><span class="metric-icon sensor-icon">⌁</span><span class="metric-label">Conectividade</span></div>
-            <div class="metric-value sensor-value"><span id="sensorStatus">Não conectado</span></div>
-            <div class="metric-foot"><span class="status-indicator pending"></span><span class="metric-context">Sensor físico ainda não integrado</span></div>
-            <div class="sensor-card-bottom"><span class="outline-chip">Integração pendente</span></div>
-          </article>
-        </div>
-      </section>
-
-      <section class="section-block" id="historico">
-        <div class="section-heading chart-section-heading">
-          <div><p class="eyebrow">TENDÊNCIA ILUSTRATIVA</p><h2>Histórico de indicadores</h2><p class="section-description">Explore a variação dos valores simulados por período e tipo de indicador.</p></div>
           <div class="chart-controls">
-            <label class="sr-only" for="metricSelect">Indicador exibido</label>
-            <select id="metricSelect" class="control-select" aria-label="Selecionar indicador">
-              <option value="humidity">Umidade do solo</option>
+            <label class="sr-only" for="metricSelect">Indicador do gráfico</label>
+            <select id="metricSelect">
+              <option value="humidity">Umidade</option>
               <option value="temperature">Temperatura</option>
             </select>
-            <div class="segmented-control" role="group" aria-label="Período do histórico">
-              <button class="period-button" data-period="6" type="button">6h</button>
-              <button class="period-button active" data-period="12" type="button">12h</button>
-              <button class="period-button" data-period="24" type="button">24h</button>
-            </div>
           </div>
         </div>
 
-        <div class="chart-card">
-          <div class="chart-card-header">
-            <div><span class="chart-title" id="chartTitle">Umidade do solo</span><p id="chartDescription">Variação simulada ao longo do período selecionado.</p></div>
-            <span class="chart-legend"><span class="legend-dot"></span><span id="chartLegendLabel">Umidade (%)</span></span>
+        <div class="chart-legend">
+          <span class="legend-dot" id="chartLegendDot"></span>
+          <span id="chartLegendLabel">Umidade (%)</span>
+          <span class="chart-period" id="periodSummary">Últimas 12 leituras</span>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="soilChart" aria-label="Gráfico histórico dos indicadores ambientais"></canvas>
+          <div class="chart-fallback" id="chartFallback" hidden>
+            Não foi possível carregar o gráfico. Verifique sua conexão com a biblioteca Chart.js.
           </div>
-          <div class="chart-wrap"><canvas id="soilChart" role="img" aria-label="Gráfico de histórico ilustrativo dos indicadores do solo">Seu navegador não oferece suporte ao gráfico.</canvas></div>
-          <div class="chart-footer"><span>ⓘ Dados fictícios para demonstração acadêmica.</span><span id="periodSummary">Últimas 12 horas</span></div>
+        </div>
+
+        <div class="period-controls" aria-label="Quantidade de leituras exibidas">
+          <button class="period-button" data-period="6">6 leituras</button>
+          <button class="period-button active" data-period="12">12 leituras</button>
+          <button class="period-button" data-period="24">24 leituras</button>
         </div>
       </section>
 
-      <section class="section-block status-section">
-        <div class="section-heading"><div><p class="eyebrow">TRANSPARÊNCIA</p><h2>Estado do projeto</h2></div><span class="outline-chip">Em desenvolvimento</span></div>
+      <section class="status-section" id="status">
+        <div class="section-heading compact-heading">
+          <div>
+            <div class="eyebrow">DIAGNÓSTICO</div>
+            <h2>Estado do sistema</h2>
+          </div>
+        </div>
+
         <div class="status-grid">
-          <article class="status-card"><div class="status-card-icon">✓</div><div><strong>Interface disponível</strong><p>O painel pode ser explorado no navegador.</p></div><span class="status-tag complete">Disponível</span></article>
-          <article class="status-card"><div class="status-card-icon">⌁</div><div><strong>Dados de demonstração</strong><p>Valores gerados localmente pela aplicação.</p></div><span class="status-tag demo">Ativo</span></article>
-          <article class="status-card"><div class="status-card-icon">○</div><div><strong>Sensores físicos</strong><p>Conexão com hardware ainda não implementada.</p></div><span class="status-tag pending-tag">Pendente</span></article>
-          <article class="status-card"><div class="status-card-icon">↗</div><div><strong>Transmissão de dados</strong><p>Integração e armazenamento futuro.</p></div><span class="status-tag pending-tag">Pendente</span></article>
+          <article class="status-card">
+            <span class="status-card-icon">⌁</span>
+            <div>
+              <strong>Simulador IoT</strong>
+              <p id="sensorStatus">Pronto para simulação</p>
+            </div>
+            <span class="status-indicator" id="sensorStatusIndicator"></span>
+          </article>
+
+          <article class="status-card">
+            <span class="status-card-icon">◉</span>
+            <div>
+              <strong>Sensores físicos</strong>
+              <p id="physicalSensorStatus">Não conectados</p>
+            </div>
+            <span class="status-indicator indicator-neutral"></span>
+          </article>
+
+          <article class="status-card">
+            <span class="status-card-icon">▣</span>
+            <div>
+              <strong>Fonte dos dados</strong>
+              <p>Simulação local no navegador</p>
+            </div>
+            <span class="status-indicator"></span>
+          </article>
         </div>
       </section>
 
       <section class="about-panel" id="sobre">
-        <div class="about-symbol">✳</div>
-        <div class="about-copy"><p class="eyebrow">SOBRE O TERRAVIVA</p><h2>Tecnologia acessível para decisões melhores.</h2><p>O TerraViva é um projeto acadêmico que explora uma interface simples para visualizar indicadores ambientais do solo. Nesta versão, os dados são simulados; o monitoramento real dependerá da integração futura com sensores e uma fonte de dados confiável.</p></div>
-        <div class="about-meta"><span>Projeto acadêmico</span><strong>Versão 1.1</strong><span>Interface demonstrativa</span></div>
+        <div class="about-icon">🌱</div>
+        <div>
+          <div class="eyebrow">SOBRE O TERRAVIVA</div>
+          <h2>Tecnologia, sustentabilidade e inovação.</h2>
+          <p>
+            O TerraViva é um protótipo acadêmico de monitoramento agrícola.
+            O simulador demonstra como uma aplicação pode receber, processar
+            e visualizar leituras ambientais. A integração com sensores físicos
+            ainda não está implementada.
+          </p>
+        </div>
       </section>
 
-      <footer class="page-footer"><span>TerraViva • Uma ideia que estamos cultivando juntos.</span><span>Desenvolvido pela nossa equipe, com foco em clareza e sustentabilidade <span class="footer-leaf">✳</span></span></footer>
-      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      <footer class="page-footer">
+        <span>TerraViva · Protótipo acadêmico</span>
+        <span>Dados demonstrativos — não usar para decisões agrícolas reais.</span>
+      </footer>
     </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-icon" id="toastIcon">✓</span>
+    <span id="toastMessage">Simulação atualizada.</span>
+    <button class="toast-close" id="toastClose" aria-label="Fechar notificação">×</button>
   </div>
 </body>
 </html>
