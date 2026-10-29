@@ -1,80 +1,47 @@
-# TerraViva 🌱
+# TerraViva
 
 **Tecnologia a serviço da terra.**
 
 ## Sobre o projeto
 
-O TerraViva é um projeto acadêmico desenvolvido no âmbito do UPX 3, com foco em sustentabilidade e monitoramento das condições do solo.
+O TerraViva é um projeto de tecnologia sustentável voltado ao monitoramento das condições do solo por meio de sensores e de um sistema digital para visualização dos dados coletados.
 
-A proposta consiste em integrar um protótipo físico com sensores a um sistema digital para visualização dos dados coletados, buscando facilitar o acompanhamento do ambiente de cultivo e incentivar decisões mais conscientes sobre o cuidado com o solo e o uso dos recursos naturais.
+A proposta busca integrar um protótipo físico a um painel de monitoramento, facilitando o acompanhamento das informações e contribuindo para uma compreensão mais precisa do ambiente de cultivo.
 
-## Objetivo
-
-Desenvolver um protótipo funcional de monitoramento das condições do solo, integrando coleta de dados e visualização digital das informações.
-
-## Funcionalidades previstas
-
-- Monitoramento das condições do solo por meio de sensores.
-- Coleta e organização dos dados obtidos.
-- Visualização das informações em um painel digital.
-- Integração entre o protótipo físico e o sistema de monitoramento, conforme os recursos disponíveis.
-
-> **Status:** em desenvolvimento. As funcionalidades serão atualizadas conforme a implementação do projeto.
+O projeto tem como propósito aliar tecnologia e sustentabilidade, apoiando decisões mais conscientes sobre o cuidado com o solo e o uso responsável dos recursos naturais.
 
 ## Tecnologias utilizadas
 
-As tecnologias serão documentadas conforme forem definidas e utilizadas pela equipe.
+- HTML5 — estrutura da interface.
+- CSS3 — estilização e responsividade.
+- JavaScript — lógica e interatividade.
+- Chart.js — visualização gráfica dos dados.
 
-- **Hardware e sensores:** [componentes definidos pelo grupo]
-- **Linguagem de programação:** [linguagem utilizada]
-- **Interface e painel:** [tecnologias utilizadas]
-- **Armazenamento de dados:** [se aplicável]
+## Como executar
 
-## Como executar o projeto
+1. Baixe ou clone este repositório.
+2. Abra a pasta do projeto.
+3. Abra o arquivo `index.html` em um navegador.
+4. Mantenha a conexão com a internet para carregar as bibliotecas externas utilizadas pelo dashboard.
 
-As instruções de instalação e execução serão adicionadas após a implementação da primeira versão funcional.
+## Estado atual
 
-1. Clone este repositório.
-2. Instale os requisitos necessários, conforme a documentação do sistema.
-3. Configure os componentes e as dependências.
-4. Execute a aplicação seguindo as instruções específicas de cada módulo.
+- Dashboard visual implementado.
+- Gráfico com dados demonstrativos.
+- Interface preparada para futura integração com sensores físicos.
+- Integração com hardware e transmissão de dados reais ainda dependem da implementação correspondente.
 
-## Estrutura do repositório
+**Importante:** os valores exibidos na versão demonstrativa não representam medições reais do solo.
 
-A organização das pastas será atualizada de acordo com os módulos efetivamente desenvolvidos.
+## Integrantes
 
-- `src/` — código-fonte da aplicação.
-- `hardware/` — arquivos e informações dos componentes físicos.
-- `docs/` — documentação técnica e acadêmica.
-- `tests/` — testes do sistema, quando implementados.
+- Lucas Lopes dos Santos
+- Gustavo Silva de Oliveira
+- William Feitosa
+- Vinicius da Silva Almeida
+- Gabriel Caixeiro
+- Kaiki Dantas Arruda
 
-Equipe
+## Objetivo
 
-Projeto desenvolvido em grupo para a disciplina UPX 3.
-
-Lucas Lopes dos Santos - (Líder do Grupo)
-
-Gustavo Silva de Oliveira - (Membro)
-
-William Feitosa - (Membro)
-
-Vinicius da Silva Almeida - (Membro)
-
-Gabriel Caixeiro - (Membro)
-
-Kaiki Dantas Arruda - (Membro)
-
-
-Projeto: TerraViva
-
-Disciplina: UPX 3
-
-Instituição: UniFacens
-
-Ano: 2026
-
-Sobre o TerraViva
-
-O TerraViva propõe integrar tecnologia e sustentabilidade por meio do monitoramento das condições do solo. A solução prevê um protótipo físico com sensores e um sistema digital para visualização dos dados coletados, contribuindo para o acompanhamento do ambiente de cultivo e para decisões mais conscientes sobre o uso dos recursos naturais.
-
-- Tecnologia a serviço da terra. - 
+Desenvolver uma solução que integre tecnologia e sustentabilidade para facilitar o monitoramento das condições do solo.
