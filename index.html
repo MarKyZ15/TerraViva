@@ -1,191 +1,154 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#101914">
-    <meta name="description" content="TerraViva: dashboard acadêmico para monitoramento sustentável do solo.">
-    <title>TerraViva | Monitoramento do Solo</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/dashboard.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101914">
+  <meta name="description" content="TerraViva: painel acadêmico demonstrativo para visualização de indicadores ambientais do solo.">
+  <title>TerraViva | Monitoramento do Solo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/dashboard.js" defer></script>
 </head>
 <body>
-<div class="app-shell">
-    <aside class="sidebar">
-        <a class="brand" href="#">
-            <div class="brand-icon">✳</div>
-            <div>
-                <strong>Terra<span>Viva</span></strong>
-                <small>SOIL MONITORING</small>
-            </div>
-        </a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#overview" aria-label="TerraViva, início">
+        <span class="brand-mark" aria-hidden="true">✳</span>
+        <span class="brand-name">Terra<span>Viva</span><small>SOLO • DADOS • FUTURO</small></span>
+      </a>
 
-        <div class="nav-label">MENU PRINCIPAL</div>
-        <nav class="navigation">
-            <a class="nav-item active" href="#overview"><span>▦</span> Visão geral</a>
-            <a class="nav-item" href="#monitoramento"><span>⌁</span> Monitoramento</a>
-            <a class="nav-item" href="#historico"><span>◷</span> Histórico</a>
-            <a class="nav-item" href="#sobre"><span>ⓘ</span> Sobre o projeto</a>
-        </nav>
+      <div class="workspace-label">ESPAÇO DE TRABALHO</div>
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a class="nav-link active" href="#overview"><span class="nav-icon">⌂</span><span>Visão geral</span></a>
+        <a class="nav-link" href="#monitoramento"><span class="nav-icon">◉</span><span>Monitoramento</span></a>
+        <a class="nav-link" href="#historico"><span class="nav-icon">▥</span><span>Histórico</span></a>
+        <a class="nav-link" href="#sobre"><span class="nav-icon">ⓘ</span><span>Sobre o projeto</span></a>
+      </nav>
 
-        <div class="sidebar-bottom">
-            <div class="project-status">
-                <span class="status-dot"></span>
-                <div>
-                    <strong>Modo demonstração</strong>
-                    <small>Dados simulados</small>
-                </div>
-            </div>
-            <div class="sidebar-footer">UPX 3 · 2026<br>Projeto acadêmico</div>
-        </div>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-project-card">
+        <span class="tiny-status-dot"></span>
+        <div><strong>Ambiente de demonstração</strong><p>Os dados são ilustrativos.</p></div>
+      </div>
+      <div class="sidebar-footer">
+        <span>TerraViva <span class="version">v1.1</span></span>
+        <span>Projeto acadêmico • 2026</span>
+      </div>
     </aside>
 
     <main class="main-content" id="overview">
-        <header class="topbar">
-            <div>
-                <div class="eyebrow">SUSTENTABILIDADE · TECNOLOGIA</div>
-                <h1>Monitoramento do solo</h1>
-                <p class="subtitle">Conhecer a terra é cultivar o futuro.</p>
+      <header class="topbar">
+        <button class="mobile-menu-button" id="mobileMenuButton" type="button" aria-label="Abrir menu" aria-expanded="false">☰</button>
+        <div class="breadcrumb"><span>TerraViva</span><span class="breadcrumb-separator">/</span><strong>Painel</strong></div>
+        <div class="topbar-actions">
+          <span class="demo-pill"><span class="tiny-status-dot"></span> MODO SIMULAÇÃO</span>
+          <div class="profile-avatar" aria-label="Projeto TerraViva">TV</div>
+        </div>
+      </header>
+
+      <section class="page-heading">
+        <div>
+          <p class="eyebrow">PAINEL AMBIENTAL</p>
+          <h1>Monitoramento do solo</h1>
+          <p class="page-subtitle">Uma visão simples para acompanhar indicadores e apoiar decisões mais conscientes.</p>
+        </div>
+        <button class="button button-secondary" id="refreshButton" type="button"><span aria-hidden="true">↻</span> Atualizar demonstração</button>
+      </section>
+
+      <section class="welcome-banner" aria-labelledby="welcomeTitle">
+        <div class="welcome-copy">
+          <span class="banner-label"><span class="banner-label-dot"></span> TECNOLOGIA E SUSTENTABILIDADE</span>
+          <h2 id="welcomeTitle">Conhecer a terra.<br><em>Cuidar do futuro.</em></h2>
+          <p>Indicadores apresentados de forma clara para facilitar a leitura do ambiente e aproximar a tecnologia da rotina de pequenos produtores.</p>
+          <a class="banner-link" href="#monitoramento">Explorar indicadores <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="plant-art" aria-hidden="true">
+          <div class="sun-orb"></div><div class="plant-stem"></div>
+          <div class="leaf leaf-one"></div><div class="leaf leaf-two"></div><div class="leaf leaf-three"></div>
+          <div class="soil-hill hill-back"></div><div class="soil-hill hill-front"></div>
+          <div class="art-spark spark-one">✦</div><div class="art-spark spark-two">·</div>
+        </div>
+        <div class="banner-decoration" aria-hidden="true">TV</div>
+      </section>
+
+      <section class="section-block" id="monitoramento">
+        <div class="section-heading">
+          <div><p class="eyebrow">LEITURA RÁPIDA</p><h2>Indicadores ambientais</h2></div>
+          <span class="section-note"><span class="tiny-status-dot"></span> Valores simulados para demonstração</span>
+        </div>
+
+        <div class="metrics-grid">
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon humidity-icon">≈</span><span class="metric-label">Umidade do solo</span><span class="metric-info" title="Valor ilustrativo, não medido por sensor físico." aria-label="Valor ilustrativo">i</span></div>
+            <div class="metric-value"><span id="humidityValue">42</span><small>%</small></div>
+            <div class="metric-foot"><span class="metric-context">Indicador demonstrativo</span><span class="metric-sparkline" aria-hidden="true">▁▃▂▅▄▆▅</span></div>
+            <div class="metric-progress"><span id="humidityProgress" style="width:42%"></span></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon temperature-icon">°</span><span class="metric-label">Temperatura</span><span class="metric-info" title="Valor ilustrativo, não medido por sensor físico." aria-label="Valor ilustrativo">i</span></div>
+            <div class="metric-value"><span id="temperatureValue">24,5</span><small>°C</small></div>
+            <div class="metric-foot"><span class="metric-context">Indicador demonstrativo</span><span class="metric-sparkline warm" aria-hidden="true">▂▃▄▃▅▄▆</span></div>
+            <div class="metric-progress temperature-progress"><span id="temperatureProgress" style="width:49%"></span></div>
+          </article>
+          <article class="metric-card sensor-card">
+            <div class="metric-top"><span class="metric-icon sensor-icon">⌁</span><span class="metric-label">Conectividade</span></div>
+            <div class="metric-value sensor-value"><span id="sensorStatus">Não conectado</span></div>
+            <div class="metric-foot"><span class="status-indicator pending"></span><span class="metric-context">Sensor físico ainda não integrado</span></div>
+            <div class="sensor-card-bottom"><span class="outline-chip">Integração pendente</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block" id="historico">
+        <div class="section-heading chart-section-heading">
+          <div><p class="eyebrow">TENDÊNCIA ILUSTRATIVA</p><h2>Histórico de indicadores</h2><p class="section-description">Explore a variação dos valores simulados por período e tipo de indicador.</p></div>
+          <div class="chart-controls">
+            <label class="sr-only" for="metricSelect">Indicador exibido</label>
+            <select id="metricSelect" class="control-select" aria-label="Selecionar indicador">
+              <option value="humidity">Umidade do solo</option>
+              <option value="temperature">Temperatura</option>
+            </select>
+            <div class="segmented-control" role="group" aria-label="Período do histórico">
+              <button class="period-button" data-period="6" type="button">6h</button>
+              <button class="period-button active" data-period="12" type="button">12h</button>
+              <button class="period-button" data-period="24" type="button">24h</button>
             </div>
-            <div class="topbar-right">
-                <span class="demo-badge"><span></span> AMBIENTE DE TESTE</span>
-                <div class="avatar">TV</div>
-            </div>
-        </header>
+          </div>
+        </div>
 
-        <section class="welcome-banner">
-            <div class="welcome-copy">
-                <span class="banner-tag">TERRAVIVA · UPX 3</span>
-                <h2>Tecnologia a serviço<br>da <em>terra.</em></h2>
-                <p>Uma visão integrada das condições do solo para apoiar o cultivo consciente e o uso responsável dos recursos naturais.</p>
-                <a href="#monitoramento" class="banner-link">Explorar indicadores <span>↗</span></a>
-            </div>
-            <div class="plant-art" aria-hidden="true">
-                <div class="sun"></div>
-                <div class="plant-stem"></div>
-                <div class="leaf leaf-left"></div>
-                <div class="leaf leaf-right"></div>
-                <div class="soil-layer"></div>
-                <div class="soil-root root-one"></div>
-                <div class="soil-root root-two"></div>
-                <div class="soil-root root-three"></div>
-            </div>
-            <div class="banner-orb orb-one"></div>
-            <div class="banner-orb orb-two"></div>
-        </section>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><span class="chart-title" id="chartTitle">Umidade do solo</span><p id="chartDescription">Variação simulada ao longo do período selecionado.</p></div>
+            <span class="chart-legend"><span class="legend-dot"></span><span id="chartLegendLabel">Umidade (%)</span></span>
+          </div>
+          <div class="chart-wrap"><canvas id="soilChart" role="img" aria-label="Gráfico de histórico ilustrativo dos indicadores do solo">Seu navegador não oferece suporte ao gráfico.</canvas></div>
+          <div class="chart-footer"><span>ⓘ Dados fictícios para demonstração acadêmica.</span><span id="periodSummary">Últimas 12 horas</span></div>
+        </div>
+      </section>
 
-        <section class="section-heading" id="monitoramento">
-            <div>
-                <h2>Indicadores ambientais</h2>
-                <p>Valores ilustrativos para demonstrar a interface.</p>
-            </div>
-            <span class="period-label">● SIMULAÇÃO LOCAL</span>
-        </section>
+      <section class="section-block status-section">
+        <div class="section-heading"><div><p class="eyebrow">TRANSPARÊNCIA</p><h2>Estado do projeto</h2></div><span class="outline-chip">Em desenvolvimento</span></div>
+        <div class="status-grid">
+          <article class="status-card"><div class="status-card-icon">✓</div><div><strong>Interface disponível</strong><p>O painel pode ser explorado no navegador.</p></div><span class="status-tag complete">Disponível</span></article>
+          <article class="status-card"><div class="status-card-icon">⌁</div><div><strong>Dados de demonstração</strong><p>Valores gerados localmente pela aplicação.</p></div><span class="status-tag demo">Ativo</span></article>
+          <article class="status-card"><div class="status-card-icon">○</div><div><strong>Sensores físicos</strong><p>Conexão com hardware ainda não implementada.</p></div><span class="status-tag pending-tag">Pendente</span></article>
+          <article class="status-card"><div class="status-card-icon">↗</div><div><strong>Transmissão de dados</strong><p>Integração e armazenamento futuro.</p></div><span class="status-tag pending-tag">Pendente</span></article>
+        </div>
+      </section>
 
-        <section class="metrics-grid">
-            <article class="metric-card">
-                <div class="metric-top">
-                    <span class="metric-icon blue">≈</span>
-                    <span class="metric-label">UMIDADE DO SOLO</span>
-                    <span class="metric-menu">•••</span>
-                </div>
-                <div class="metric-value"><span id="humidityValue">42</span><small>%</small></div>
-                <div class="metric-bottom"><span class="metric-indicator blue-text">◌</span> <span>Valor demonstrativo</span></div>
-                <div class="mini-bars" id="humidityBars" aria-hidden="true"></div>
-            </article>
+      <section class="about-panel" id="sobre">
+        <div class="about-symbol">✳</div>
+        <div class="about-copy"><p class="eyebrow">SOBRE O TERRAVIVA</p><h2>Tecnologia acessível para decisões melhores.</h2><p>O TerraViva é um projeto acadêmico que explora uma interface simples para visualizar indicadores ambientais do solo. Nesta versão, os dados são simulados; o monitoramento real dependerá da integração futura com sensores e uma fonte de dados confiável.</p></div>
+        <div class="about-meta"><span>Projeto acadêmico</span><strong>Versão 1.1</strong><span>Interface demonstrativa</span></div>
+      </section>
 
-            <article class="metric-card">
-                <div class="metric-top">
-                    <span class="metric-icon orange">♨</span>
-                    <span class="metric-label">TEMPERATURA</span>
-                    <span class="metric-menu">•••</span>
-                </div>
-                <div class="metric-value"><span id="temperatureValue">24,5</span><small>°C</small></div>
-                <div class="metric-bottom"><span class="metric-indicator orange-text">◌</span> <span>Valor demonstrativo</span></div>
-                <div class="mini-bars orange-bars" id="temperatureBars" aria-hidden="true"></div>
-            </article>
-
-            <article class="metric-card">
-                <div class="metric-top">
-                    <span class="metric-icon green">⌁</span>
-                    <span class="metric-label">SENSOR</span>
-                    <span class="metric-menu">•••</span>
-                </div>
-                <div class="metric-value metric-word">Não conectado</div>
-                <div class="metric-bottom"><span class="neutral-dot"></span> <span>Aguardando integração física</span></div>
-                <div class="metric-footnote">Estado atual do protótipo</div>
-            </article>
-
-            <article class="metric-card">
-                <div class="metric-top">
-                    <span class="metric-icon purple">◷</span>
-                    <span class="metric-label">ÚLTIMA ATUALIZAÇÃO</span>
-                    <span class="metric-menu">•••</span>
-                </div>
-                <div class="metric-value metric-word" id="updateTime">--:--</div>
-                <div class="metric-bottom"><span class="neutral-dot"></span> <span>Atualização da simulação</span></div>
-                <div class="metric-footnote" id="updateDate">Data local</div>
-            </article>
-        </section>
-
-        <section class="charts-grid" id="historico">
-            <article class="panel chart-panel">
-                <div class="panel-heading">
-                    <div>
-                        <h3>Variação dos indicadores</h3>
-                        <p>Histórico ilustrativo de umidade do solo</p>
-                    </div>
-                    <span class="chart-legend"><i></i> Umidade (%)</span>
-                </div>
-                <div class="chart-wrap">
-                    <canvas id="soilChart" aria-label="Gráfico demonstrativo da umidade do solo"></canvas>
-                </div>
-                <div class="chart-footnote">Os pontos exibidos não foram coletados por sensores reais.</div>
-            </article>
-
-            <article class="panel status-panel">
-                <div class="panel-heading">
-                    <div>
-                        <h3>Estado do sistema</h3>
-                        <p>Visão operacional do protótipo</p>
-                    </div>
-                    <span class="status-symbol">⌘</span>
-                </div>
-                <div class="system-state">
-                    <div class="state-icon">⌁</div>
-                    <div>
-                        <strong>Em desenvolvimento</strong>
-                        <p>A integração com sensores ainda não foi configurada.</p>
-                    </div>
-                </div>
-                <div class="status-row"><span>Dashboard</span><span class="state-pill ready">Disponível</span></div>
-                <div class="status-row"><span>Dados demonstrativos</span><span class="state-pill ready">Ativos</span></div>
-                <div class="status-row"><span>Sensor físico</span><span class="state-pill pending">Pendente</span></div>
-                <div class="status-row"><span>Transmissão de dados</span><span class="state-pill pending">Pendente</span></div>
-                <div class="status-note"><span>ⓘ</span> Os estados serão atualizados conforme o desenvolvimento avançar.</div>
-            </article>
-        </section>
-
-        <section class="panel about-panel" id="sobre">
-            <div class="about-icon">✳</div>
-            <div>
-                <h3>Sobre o TerraViva</h3>
-                <p>Projeto acadêmico que propõe integrar sensores de monitoramento do solo a um painel digital, aproximando tecnologia e sustentabilidade para apoiar decisões mais conscientes no ambiente de cultivo.</p>
-            </div>
-            <span class="academic-tag">PROJETO UPX 3</span>
-        </section>
-
-        <footer class="page-footer">
-            <span>© 2026 TerraViva · Projeto acadêmico UPX 3</span>
-            <span>TECNOLOGIA A SERVIÇO DA TERRA <b>✳</b></span>
-        </footer>
+      <footer class="page-footer"><span>© 2026 TerraViva • Projeto acadêmico</span><span>Construído com foco em clareza e sustentabilidade <span class="footer-leaf">✳</span></span></footer>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </main>
-</div>
+  </div>
 </body>
 </html>

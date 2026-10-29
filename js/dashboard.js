@@ -1,161 +1,219 @@
-
 "use strict";
 
-// TerraViva — Dashboard acadêmico
-// Os valores abaixo são simulados e NÃO representam medições reais.
+// TerraViva — dashboard acadêmico.
+// ATENÇÃO: todos os valores são simulados e não representam medições reais.
 
 const demoData = {
-    humidity: [35, 38, 36, 43, 40, 45, 42, 39, 44, 42, 46, 42],
-    temperature: [22.1, 22.8, 23.4, 24.1, 23.7, 25.0, 24.5],
-    labels: ["08h", "09h", "10h", "11h", "12h", "13h", "14h", "15h", "16h", "17h", "18h", "19h"]
+  humidity: {
+    values: [35, 38, 36, 43, 40, 45, 42, 39, 44, 42, 46, 42, 41, 43, 40, 44, 42, 45, 43, 41, 44, 42, 46, 42],
+    unit: "%",
+    label: "Umidade (%)",
+    title: "Umidade do solo",
+    color: "#a7d96c",
+    min: 0,
+    max: 100
+  },
+  temperature: {
+    values: [21.8, 22.1, 22.5, 22.8, 23.2, 23.7, 24.1, 23.9, 24.4, 24.8, 24.5, 24.2, 24.7, 25.0, 24.6, 24.3, 24.8, 25.2, 24.9, 24.6, 24.2, 24.7, 24.5, 24.5],
+    unit: "°C",
+    label: "Temperatura (°C)",
+    title: "Temperatura",
+    color: "#f0b56b",
+    min: 15,
+    max: 35
+  }
 };
 
-function createMiniBars(elementId, values) {
-    const container = document.getElementById(elementId);
+let soilChart = null;
+let selectedMetric = "humidity";
+let selectedPeriod = 12;
+let toastTimeout = null;
 
-    if (!container) return;
-
-    container.replaceChildren();
-
-    values.forEach((value) => {
-        const bar = document.createElement("span");
-        bar.style.height = `${value}%`;
-        container.appendChild(bar);
-    });
+function makeLabels(count) {
+  const labels = [];
+  const startHour = 24 - count;
+  for (let i = 0; i < count; i++) {
+    const hour = ((startHour + i) % 24 + 24) % 24;
+    labels.push(String(hour).padStart(2, "0") + "h");
+  }
+  return labels;
 }
 
-function updateClock() {
-    const now = new Date();
-    const timeElement = document.getElementById("updateTime");
-    const dateElement = document.getElementById("updateDate");
-
-    if (timeElement) {
-        timeElement.textContent = now.toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-    }
-
-    if (dateElement) {
-        dateElement.textContent = now.toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric"
-        });
-    }
+function getVisibleData(metric, period) {
+  const source = demoData[metric];
+  const count = Math.min(period, source.values.length);
+  return {
+    labels: makeLabels(count),
+    values: source.values.slice(-count)
+  };
 }
 
 function createSoilChart() {
-    const canvas = document.getElementById("soilChart");
+  const canvas = document.getElementById("soilChart");
+  if (!canvas || typeof Chart === "undefined") return;
 
-    if (!canvas || typeof Chart === "undefined") {
-        console.warn("Chart.js não foi carregado. Verifique a conexão com a internet.");
-        return;
-    }
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gradient.addColorStop(0, selectedMetric === "humidity" ? "rgba(167, 217, 108, 0.22)" : "rgba(240, 181, 107, 0.22)");
+  gradient.addColorStop(1, "rgba(20, 30, 22, 0)");
 
-    new Chart(canvas, {
-        type: "line",
+  const visible = getVisibleData(selectedMetric, selectedPeriod);
+  const metric = demoData[selectedMetric];
 
-        data: {
-            labels: demoData.labels,
-            datasets: [{
-                label: "Umidade simulada",
-                data: demoData.humidity,
-                borderColor: "#a7d96c",
-                backgroundColor: "rgba(167, 217, 108, 0.10)",
-                borderWidth: 2.5,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                pointBackgroundColor: "#a7d96c",
-                pointBorderColor: "#19221b",
-                pointBorderWidth: 2
-            }]
-        },
+  if (soilChart) soilChart.destroy();
 
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-
-            interaction: {
-                intersect: false,
-                mode: "index"
-            },
-
-            plugins: {
-                legend: {
-                    display: false
-                },
-
-                tooltip: {
-                    backgroundColor: "#263329",
-                    titleColor: "#edf4ec",
-                    bodyColor: "#c3d3c3",
-                    borderColor: "#415442",
-                    borderWidth: 1,
-                    padding: 12,
-                    callbacks: {
-                        label(context) {
-                            return ` Umidade demonstrativa: ${context.parsed.y}%`;
-                        }
-                    }
-                }
-            },
-
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    border: {
-                        display: false
-                    },
-                    ticks: {
-                        color: "#91a093",
-                        maxRotation: 0,
-                        autoSkip: true,
-                        maxTicksLimit: 7,
-                        font: {
-                            family: "DM Sans",
-                            size: 10
-                        }
-                    }
-                },
-
-                y: {
-                    min: 0,
-                    max: 100,
-                    border: {
-                        display: false
-                    },
-                    grid: {
-                        color: "rgba(145, 160, 147, 0.12)"
-                    },
-                    ticks: {
-                        color: "#91a093",
-                        stepSize: 20,
-                        padding: 9,
-                        callback(value) {
-                            return `${value}%`;
-                        },
-                        font: {
-                            family: "DM Sans",
-                            size: 10
-                        }
-                    }
-                }
-            }
+  soilChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: visible.labels,
+      datasets: [{
+        label: metric.label,
+        data: visible.values,
+        borderColor: metric.color,
+        backgroundColor: gradient,
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.38,
+        pointRadius: 2.5,
+        pointHoverRadius: 5,
+        pointBackgroundColor: metric.color,
+        pointBorderColor: "#19231b",
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: "index" },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#101812",
+          titleColor: "#edf4ec",
+          bodyColor: "#c4d0c2",
+          borderColor: "#344334",
+          borderWidth: 1,
+          padding: 12,
+          displayColors: false,
+          callbacks: {
+            label: (context) => `${metric.title}: ${Number(context.parsed.y).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${metric.unit}`
+          }
         }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: "#899889", maxTicksLimit: selectedPeriod === 24 ? 8 : 7, font: { family: "DM Sans", size: 11 } }
+        },
+        y: {
+          min: metric.min,
+          max: metric.max,
+          border: { display: false, dash: [4, 4] },
+          grid: { color: "rgba(145, 160, 147, 0.12)" },
+          ticks: {
+            color: "#899889",
+            padding: 10,
+            font: { family: "DM Sans", size: 11 },
+            callback: (value) => `${value}${metric.unit}`
+          }
+        }
+      }
+    }
+  });
+
+  document.getElementById("chartTitle").textContent = metric.title;
+  document.getElementById("chartLegendLabel").textContent = metric.label;
+  document.getElementById("chartDescription").textContent = "Variação simulada ao longo do período selecionado.";
+  document.getElementById("periodSummary").textContent = `Últimas ${selectedPeriod} horas`;
+}
+
+function updateMetricCards() {
+  const humidity = demoData.humidity.values[demoData.humidity.values.length - 1];
+  const temperature = demoData.temperature.values[demoData.temperature.values.length - 1];
+  document.getElementById("humidityValue").textContent = humidity.toLocaleString("pt-BR");
+  document.getElementById("temperatureValue").textContent = temperature.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  document.getElementById("humidityProgress").style.width = `${humidity}%`;
+  document.getElementById("temperatureProgress").style.width = `${Math.min(100, Math.max(0, (temperature / 50) * 100))}%`;
+}
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("visible");
+  if (toastTimeout) window.clearTimeout(toastTimeout);
+  toastTimeout = window.setTimeout(() => toast.classList.remove("visible"), 3200);
+}
+
+function refreshDemo() {
+  // Pequena variação fictícia para demonstrar interação; não consulta sensores.
+  const humidity = demoData.humidity.values;
+  const temperature = demoData.temperature.values;
+  const lastHumidity = humidity[humidity.length - 1];
+  const lastTemperature = temperature[temperature.length - 1];
+  humidity.push(Math.max(30, Math.min(60, lastHumidity + (Math.random() > 0.5 ? 1 : -1) * (Math.random() > 0.55 ? 2 : 1))));
+  temperature.push(Math.max(20, Math.min(28, Number((lastTemperature + (Math.random() > 0.5 ? 0.3 : -0.3)).toFixed(1)))));
+  humidity.shift();
+  temperature.shift();
+  updateMetricCards();
+  createSoilChart();
+  showToast("Demonstração atualizada. Nenhum sensor físico foi consultado.");
+}
+
+function setupNavigation() {
+  const links = document.querySelectorAll(".nav-link");
+  links.forEach((link) => {
+    link.addEventListener("click", () => {
+      links.forEach((item) => item.classList.remove("active"));
+      link.classList.add("active");
+      closeMobileMenu();
     });
+  });
+}
+
+function closeMobileMenu() {
+  const sidebar = document.getElementById("sidebar");
+  const button = document.getElementById("mobileMenuButton");
+  sidebar.classList.remove("sidebar-open");
+  button.setAttribute("aria-expanded", "false");
+}
+
+function setupMobileMenu() {
+  const button = document.getElementById("mobileMenuButton");
+  button.addEventListener("click", () => {
+    const sidebar = document.getElementById("sidebar");
+    const isOpen = sidebar.classList.toggle("sidebar-open");
+    button.setAttribute("aria-expanded", String(isOpen));
+    button.setAttribute("aria-label", isOpen ? "Fechar menu" : "Abrir menu");
+  });
+}
+
+function setupChartControls() {
+  document.getElementById("metricSelect").addEventListener("change", (event) => {
+    selectedMetric = event.target.value;
+    createSoilChart();
+  });
+
+  document.querySelectorAll(".period-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedPeriod = Number(button.dataset.period);
+      document.querySelectorAll(".period-button").forEach((item) => {
+        item.classList.toggle("active", item === button);
+      });
+      createSoilChart();
+    });
+  });
+
+  document.getElementById("refreshButton").addEventListener("click", refreshDemo);
 }
 
 function initializeDashboard() {
-    createMiniBars("humidityBars", [35, 48, 40, 62, 53, 75, 58, 82, 66, 72, 61, 88]);
-    createMiniBars("temperatureBars", [40, 48, 43, 58, 51, 67, 61, 78, 65, 72, 60, 75]);
-
-    updateClock();
-    createSoilChart();
+  updateMetricCards();
+  createSoilChart();
+  setupChartControls();
+  setupNavigation();
+  setupMobileMenu();
 }
 
 document.addEventListener("DOMContentLoaded", initializeDashboard);
