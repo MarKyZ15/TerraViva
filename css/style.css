@@ -251,3 +251,31 @@ h1 { margin: 0; font-size: clamp(25px, 2.2vw, 32px); line-height: 1.2; font-weig
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+
+/* Ajustes de humanização — versão 1.2 */
+.profile-avatar {
+  color: var(--green);
+}
+.profile-avatar svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sidebar-footer span:last-child {
+  max-width: 180px;
+  line-height: 1.6;
+}
+@media (max-width: 680px) {
+  .sidebar-footer span:last-child {
+    max-width: 190px;
+  }
+  .page-footer span:last-child {
+    max-width: 100%;
+  }
+}
